@@ -2,8 +2,58 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <netinet/in.h>
+#include <endian.h>
 #define ETHER_ADDR_LEN 6
 #define ETHERTYPE_IP 0x0800
+
+struct libnet_tcp_hdr
+{
+    u_int16_t th_sport;       /* source port */
+    u_int16_t th_dport;       /* destination port */
+    u_int32_t th_seq;          /* sequence number */
+    u_int32_t th_ack;          /* acknowledgement number */
+#if (LIBNET_LIL_ENDIAN)
+    u_int8_t th_x2:4,         /* (unused) */
+           th_off:4;        /* data offset */
+#endif
+#if (LIBNET_BIG_ENDIAN)
+    u_int8_t th_off:4,        /* data offset */
+           th_x2:4;         /* (unused) */
+#endif
+    u_int8_t  th_flags;       /* control flags */
+#ifndef TH_FIN
+#define TH_FIN    0x01      /* finished send data */
+#endif
+#ifndef TH_SYN
+#define TH_SYN    0x02      /* synchronize sequence numbers */
+#endif
+#ifndef TH_RST
+#define TH_RST    0x04      /* reset the connection */
+#endif
+#ifndef TH_PUSH
+#define TH_PUSH   0x08      /* push data to the app layer */
+#endif
+#ifndef TH_ACK
+#define TH_ACK    0x10      /* acknowledge */
+#endif
+#ifndef TH_URG
+#define TH_URG    0x20      /* urgent! */
+#endif
+#ifndef TH_ECE
+#define TH_ECE    0x40
+#endif
+#ifndef TH_CWR   
+#define TH_CWR    0x80
+#endif
+    u_int16_t th_win;         /* window */
+    u_int16_t th_sum;         /* checksum */
+    u_int16_t th_urp;         /* urgent pointer */
+};
+
+void printPORT(u_int16_t src_port, u_int16_t dst_port){
+	printf("Soruce Port: %d\n", ntohs(src_port));
+	printf("Destination Port: %d\n", ntohs(dst_port));
+}
 
 
 struct libnet_ipv4_hdr
@@ -51,18 +101,17 @@ struct libnet_ipv4_hdr
 };
 
 
-//void printip(struct in_addr ip) {
-//	printf("%s\n",inet_ntoa(ip ->s_addr));
-//}
-//void printip(struct in_addr ip) {
-//     printf("%s\n", inet_ntoa(ip));
-//}
-void printip(struct in_addr ip) {
-    printf("%d.%d.%d.%d\n",
-           ip.s_addr & 0xFF,
-           (ip.s_addr >> 8) & 0xFF,
-           (ip.s_addr >> 16) & 0xFF,
-           (ip.s_addr >> 24) & 0xFF);
+void printIP(struct in_addr src_ip, struct in_addr dst_ip) {
+    printf("Source IP: %d.%d.%d.%d\n",
+           src_ip.s_addr & 0xFF,
+           (src_ip.s_addr >> 8) & 0xFF,
+           (src_ip.s_addr >> 16) & 0xFF,
+           (src_ip.s_addr >> 24) & 0xFF);
+    printf("Destination IP: %d.%d.%d.%d\n",
+	   dst_ip.s_addr & 0xFF,
+	   (dst_ip.s_addr >> 8) & 0xFF,
+	   (dst_ip.s_addr >> 16) & 0xFF,
+	   (dst_ip.s_addr >> 24) & 0xFF);
 }
 
 struct libnet_ethernet_hdr
@@ -72,8 +121,9 @@ struct libnet_ethernet_hdr
     u_int16_t ether_type;                 /* protocol */
 };
 
-void printmac(u_int8_t* m){
-	printf("%02x %02x %02x %02x %02x %02x", m[0],m[1],m[2],m[3],m[4],m[5],m[6]);
+void printMAC(u_int8_t* src_mac, u_int8_t* dst_mac){
+	printf("Source Mac: %02x %02x %02x %02x %02x %02x\n", src_mac[0],src_mac[1],src_mac[2],src_mac[3],src_mac[4],src_mac[5]);
+	printf("Destination Mac: %02x %02x %02x %02x %02x %02x\n", dst_mac[0],dst_mac[1],dst_mac[2],dst_mac[3],dst_mac[4],dst_mac[5]);
 }
 
 
@@ -123,24 +173,17 @@ int main(int argc, char* argv[]) {
 		printf("\n%u bytes captured\n", header->caplen);
 		
 		struct libnet_ethernet_hdr* eth_hdr = (struct libnet_ethernet_hdr*)packet;
-		printf("Source Mac: ");
-		printmac(eth_hdr -> ether_shost);
-		printf("\nDestination Mac: ");
-		printmac(eth_hdr->ether_dhost);
-		printf("\n");
-		
+		struct libnet_ipv4_hdr* ip_hdr = (struct libnet_ipv4_hdr*)(packet + sizeof(*eth_hdr));
+		struct libnet_tcp_hdr* tcp_hdr = (struct libnet_tcp_hdr*)(packet + sizeof(*eth_hdr) + ip_hdr -> ip_hl*4);
+
+		printMAC(eth_hdr -> ether_shost, eth_hdr -> ether_dhost);
+
 		if(ntohs(eth_hdr -> ether_type) != ETHERTYPE_IP) continue;
 
-		//struct libnet_ipv4_hdr* ip_hdr = (struct libnet_ipv4_hdr*)packet+sizeof(struct libnet_ethernet_hdr);
-		struct libnet_ipv4_hdr* ip_hdr = (struct libnet_ipv4_hdr*)(packet + sizeof(struct libnet_ethernet_hdr));
+		printIP(ip_hdr -> ip_src, ip_hdr -> ip_dst);
 
+		printPORT(tcp_hdr -> th_sport, tcp_hdr -> th_dport);
 
-		printf("Source IP: ");
-		//printip(ip_hdr -> ip_src);
-		printip(ip_hdr -> ip_src);
-		printf("Destination IP: ");
-		printip(ip_hdr -> ip_dst);
-		printf("\n");
 
 		
 		
