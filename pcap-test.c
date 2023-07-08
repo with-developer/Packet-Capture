@@ -126,6 +126,18 @@ void printMAC(u_int8_t* src_mac, u_int8_t* dst_mac){
 	printf("Destination Mac: %02x %02x %02x %02x %02x %02x\n", dst_mac[0],dst_mac[1],dst_mac[2],dst_mac[3],dst_mac[4],dst_mac[5]);
 }
 
+void printDATA(int data_len, u_char* data){
+	if (data_len == 0){
+		printf("Data is Zero Bytes\n");
+		return;
+	}
+	printf("Data is %d Bytes\n",data_len);
+	printf("Data: ");
+	for(int i = 0; i <=10; i++){
+		printf("%02x ",data[i]);	
+	}
+	printf(". . .\n");
+}
 
 void usage() {
 	printf("syntax: pcap-test <interface>\n");
@@ -175,6 +187,9 @@ int main(int argc, char* argv[]) {
 		struct libnet_ethernet_hdr* eth_hdr = (struct libnet_ethernet_hdr*)packet;
 		struct libnet_ipv4_hdr* ip_hdr = (struct libnet_ipv4_hdr*)(packet + sizeof(*eth_hdr));
 		struct libnet_tcp_hdr* tcp_hdr = (struct libnet_tcp_hdr*)(packet + sizeof(*eth_hdr) + ip_hdr -> ip_hl*4);
+		u_char *data = (u_char *)(packet + sizeof(*eth_hdr) + ip_hdr->ip_hl * 4 + tcp_hdr->th_off * 4);
+		int data_len = ntohs(ip_hdr->ip_len) - (ip_hdr->ip_hl * 4 + tcp_hdr->th_off * 4);
+
 
 		printMAC(eth_hdr -> ether_shost, eth_hdr -> ether_dhost);
 
@@ -183,9 +198,8 @@ int main(int argc, char* argv[]) {
 		printIP(ip_hdr -> ip_src, ip_hdr -> ip_dst);
 
 		printPORT(tcp_hdr -> th_sport, tcp_hdr -> th_dport);
-
-
 		
+		printDATA(data_len, data);
 		
 	}
 
