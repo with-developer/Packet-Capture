@@ -2,9 +2,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <netinet/in.h>
-#include <endian.h>
 #define ETHER_ADDR_LEN 6
-#define ETHERTYPE_IP 0x0800
+#define ETHER_TYPE_IP 0x0800
+#define PROTOCOL_TYPE_TCP 0x06
 
 struct libnet_ethernet_hdr
 {
@@ -188,8 +188,11 @@ int main(int argc, char* argv[]) {
 		int data_len = ntohs(ip_hdr->ip_len) - (ip_hdr->ip_hl * 4 + tcp_hdr->th_off * 4);
 
                 printMAC(eth_hdr -> ether_shost, eth_hdr -> ether_dhost);
-                if(ntohs(eth_hdr -> ether_type) != ETHERTYPE_IP) continue;
-		//TODO if (ipv4 protocol Type is UDP) continue;
+                if(ntohs(eth_hdr -> ether_type) != ETHER_TYPE_IP) continue;
+		
+                printf("Protocol Type: %u\n", ip_hdr -> ip_p);
+                if(ip_hdr -> ip_p != PROTOCOL_TYPE_TCP) continue;
+                
                 printIP(ip_hdr -> ip_src, ip_hdr -> ip_dst);
                 printPORT(tcp_hdr -> th_sport, tcp_hdr -> th_dport);
                 printDATA(data_len, data);
