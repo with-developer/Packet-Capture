@@ -131,9 +131,16 @@ void printDATA(int data_len, u_char* data){
         }
         printf("Data is %d Bytes\n",data_len);
         printf("Data: ");
-        for(int i = 0; i <=9; i++){
-                printf("%02x ",data[i]);
-        }
+	if(data_len < 10){
+		for(int i = 0; i <= data_len; i++){
+			printf("%02x ", data[i]);
+			}
+	}
+	else{
+		for(int i = 0; i <=9; i++){
+			printf("%02x ",data[i]);
+		}
+	}
         printf(". . .\n");
 }
 
@@ -179,7 +186,7 @@ int main(int argc, char* argv[]) {
                         printf("pcap_next_ex return %d(%s)\n", res, pcap_geterr(pcap));
                         break;
                 }
-                printf("\n%u bytes captured\n", header->caplen);
+
 
                 struct libnet_ethernet_hdr* eth_hdr = (struct libnet_ethernet_hdr*)packet;
                 struct libnet_ipv4_hdr* ip_hdr = (struct libnet_ipv4_hdr*)(packet + sizeof(*eth_hdr));
@@ -187,14 +194,14 @@ int main(int argc, char* argv[]) {
                 u_char *data = (u_char *)(packet + sizeof(*eth_hdr) + ip_hdr->ip_hl * 4 + tcp_hdr->th_off * 4);
 		int data_len = ntohs(ip_hdr->ip_len) - (ip_hdr->ip_hl * 4 + tcp_hdr->th_off * 4);
 
+		printf("\n%u bytes captured\n", header->caplen);
+		
+		if(ip_hdr -> ip_p != PROTOCOL_TYPE_TCP) continue;
                 printMAC(eth_hdr -> ether_shost, eth_hdr -> ether_dhost);
                 if(ntohs(eth_hdr -> ether_type) != ETHER_TYPE_IP) continue;
-		
-                printf("Protocol Type: %u\n", ip_hdr -> ip_p);
-                if(ip_hdr -> ip_p != PROTOCOL_TYPE_TCP) continue;
-                
                 printIP(ip_hdr -> ip_src, ip_hdr -> ip_dst);
-                printPORT(tcp_hdr -> th_sport, tcp_hdr -> th_dport);
+                printf("Protocol Type: %u\n", ip_hdr -> ip_p);
+		printPORT(tcp_hdr -> th_sport, tcp_hdr -> th_dport);
                 printDATA(data_len, data);
         }
 
