@@ -126,21 +126,21 @@ void printPORT(u_int16_t src_port, u_int16_t dst_port){
 
 void printDATA(int data_len, u_char* data){
         if (data_len == 0){
-                printf("Data is Zero Bytes\n");
+                printf("Payload(Data) is Zero Bytes\n");
                 return;
         }
-        printf("Data is %d Bytes\n",data_len);
-        printf("Data: ");
-	if(data_len < 10){
-		for(int i = 0; i <= data_len; i++){
-			printf("%02x ", data[i]);
-			}
-	}
-	else{
-		for(int i = 0; i <=9; i++){
-			printf("%02x ",data[i]);
-		}
-	}
+        printf("Payload(Data) is %d Bytes\n",data_len);
+        printf("Payload(Data): ");
+        if(data_len < 10){
+                for(int i = 0; i <= data_len; i++){
+                        printf("%02x ", data[i]);
+                        }
+        }
+        else{
+                for(int i = 0; i <=9; i++){
+                        printf("%02x ",data[i]);
+                }
+        }
         printf(". . .\n");
 }
 
@@ -192,16 +192,27 @@ int main(int argc, char* argv[]) {
                 struct libnet_ipv4_hdr* ip_hdr = (struct libnet_ipv4_hdr*)(packet + sizeof(*eth_hdr));
                 struct libnet_tcp_hdr* tcp_hdr = (struct libnet_tcp_hdr*)(packet + sizeof(*eth_hdr) + ip_hdr -> ip_hl*4);
                 u_char *data = (u_char *)(packet + sizeof(*eth_hdr) + ip_hdr->ip_hl * 4 + tcp_hdr->th_off * 4);
-		int data_len = ntohs(ip_hdr->ip_len) - (ip_hdr->ip_hl * 4 + tcp_hdr->th_off * 4);
+                int data_len = ntohs(ip_hdr->ip_len) - (ip_hdr->ip_hl * 4 + tcp_hdr->th_off * 4);
 
-		printf("\n%u bytes captured\n", header->caplen);
-		
-		if(ip_hdr -> ip_p != PROTOCOL_TYPE_TCP) continue;
+                printf("\n%u bytes captured\n", header->caplen);
+                
                 printMAC(eth_hdr -> ether_shost, eth_hdr -> ether_dhost);
-                if(ntohs(eth_hdr -> ether_type) != ETHER_TYPE_IP) continue;
+                
+                if(ntohs(eth_hdr -> ether_type) != ETHER_TYPE_IP) {
+                        printf("This packet is not IPv4\n");
+                        continue;
+                }
+                
                 printIP(ip_hdr -> ip_src, ip_hdr -> ip_dst);
+                
                 printf("Protocol Type: %u\n", ip_hdr -> ip_p);
-		printPORT(tcp_hdr -> th_sport, tcp_hdr -> th_dport);
+                if(ip_hdr -> ip_p != PROTOCOL_TYPE_TCP){
+                        printf("This packet is not TCP\n");
+                        continue;
+                }
+
+                printPORT(tcp_hdr -> th_sport, tcp_hdr -> th_dport);
+                
                 printDATA(data_len, data);
         }
 
