@@ -13,7 +13,7 @@
 [ㄴ1. Ethernet Header의 src mac / dst mac 출력](#1-ethernet-header의-src-mac--dst-mac-출력)<br>
 [ㄴ2. IP Header의 src ip / dst ip](#2-ip-header의-src-ip--dst-ip)<br>
 [ㄴ3. TCP Header의 src port / dst port](#3-tcp-header의-src-port--dst-port)<br>
-[ㄴ4. Payload(Data)의 hexadecimal value(최대 10바이트까지만)](4-payloaddata의-hexadecimal-value최대-10바이트까지만)<br><br>
+[ㄴ4. Payload(Data)의 hexadecimal value(최대 10바이트까지만)](#4-payloaddata의-hexadecimal-value최대-10바이트까지만)<br><br>
 [결과](#결과)<br><br>
 [전체 코드](#전체-코드)<br>
 
